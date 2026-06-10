@@ -10,53 +10,116 @@
 
   <style>
     body { font-family: 'Outfit', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
-    .cache-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-    .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.1); transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
-    .glass-card:hover { transform: translateY(-5px); border-color: #6366f1; box-shadow: 0 10px 30px -10px rgba(99,102,241,0.4); }
+
+    /* ── view layouts ── */
+    #cardContainer.view-grid    { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 1rem; }
+    #cardContainer.view-list    { display: flex; flex-direction: column; gap: 0.5rem; }
+    #cardContainer.view-compact { display: flex; flex-direction: column; gap: 2px; }
+
+    /* ── grid card ── */
+    .card-grid {
+      background: rgba(30,41,59,0.7); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 1.25rem; padding: 1rem;
+      display: flex; flex-direction: column; gap: 0.6rem;
+      transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    .card-grid:hover { transform: translateY(-4px); border-color: #6366f1; box-shadow: 0 8px 24px -8px rgba(99,102,241,0.4); }
+
+    /* ── list card ── */
+    .card-list {
+      background: rgba(30,41,59,0.6); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 0.875rem; padding: 0.75rem 1rem;
+      display: flex; align-items: center; gap: 1rem;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .card-list:hover { background: rgba(99,102,241,0.1); border-color: #6366f155; }
+
+    /* ── compact row ── */
+    .card-compact {
+      background: rgba(15,23,42,0.5);
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      padding: 0.45rem 0.75rem;
+      display: flex; align-items: center; gap: 0.75rem;
+      transition: background 0.15s;
+    }
+    .card-compact:first-child { border-top: 1px solid rgba(255,255,255,0.05); border-radius: 0.5rem 0.5rem 0 0; }
+    .card-compact:last-child  { border-radius: 0 0 0.5rem 0.5rem; }
+    .card-compact:hover { background: rgba(99,102,241,0.08); }
+
+    /* ── view toggle buttons ── */
+    .view-btn { padding: 0.45rem; border-radius: 0.6rem; color: #64748b; border: 1px solid transparent; cursor: pointer; transition: all 0.15s; }
+    .view-btn:hover  { background: rgba(255,255,255,0.07); color: #cbd5e1; }
+    .view-btn.active { background: rgba(99,102,241,0.25); color: #818cf8; border-color: #6366f155; }
+
+    /* ── gradient text ── */
     .gradient-text { background: linear-gradient(90deg, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-    /* env pill buttons */
-    .env-btn { padding: 0.4rem 1rem; border-radius: 9999px; font-size: 0.78rem; font-weight: 700; letter-spacing: 0.08em; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
-    .env-btn:not(.active) { background: rgba(255,255,255,0.05); color: #94a3b8; border-color: transparent; }
+    /* ── env pills ── */
+    .env-btn { padding: 0.35rem 0.9rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.07em; border: 2px solid transparent; cursor: pointer; transition: all 0.2s; }
+    .env-btn:not(.active) { background: rgba(255,255,255,0.05); color: #94a3b8; }
     .env-btn:not(.active):hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+    .env-DEV.active  { background: #1d4ed8; color: #fff; border-color: #3b82f6; box-shadow: 0 0 12px rgba(59,130,246,0.4); }
+    .env-TEST.active { background: #b45309; color: #fff; border-color: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,0.4); }
+    .env-UAT.active  { background: #6d28d9; color: #fff; border-color: #a78bfa; box-shadow: 0 0 12px rgba(167,139,250,0.4); }
+    .env-PROD.active { background: #991b1b; color: #fff; border-color: #ef4444; box-shadow: 0 0 12px rgba(239,68,68,0.5); }
 
-    .env-DEV.active  { background: #1d4ed8; color: #fff; border-color: #3b82f6; box-shadow: 0 0 14px rgba(59,130,246,0.45); }
-    .env-TEST.active { background: #b45309; color: #fff; border-color: #f59e0b; box-shadow: 0 0 14px rgba(245,158,11,0.45); }
-    .env-UAT.active  { background: #6d28d9; color: #fff; border-color: #a78bfa; box-shadow: 0 0 14px rgba(167,139,250,0.45); }
-    .env-PROD.active { background: #991b1b; color: #fff; border-color: #ef4444; box-shadow: 0 0 14px rgba(239,68,68,0.55); }
-
-    /* env banner strip */
+    /* ── env banner ── */
     #envBanner { transition: background 0.35s; }
     .banner-DEV  { background: linear-gradient(90deg,#1e3a8a22,#1d4ed844,#1e3a8a22); border-bottom:1px solid #1d4ed855; }
     .banner-TEST { background: linear-gradient(90deg,#78350f22,#b4530944,#78350f22); border-bottom:1px solid #b4530955; }
     .banner-UAT  { background: linear-gradient(90deg,#4c1d9522,#6d28d944,#4c1d9522); border-bottom:1px solid #6d28d955; }
     .banner-PROD { background: linear-gradient(90deg,#7f1d1d33,#99171766,#7f1d1d33); border-bottom:1px solid #99171777; }
+
+    /* ── toast ── */
+    #toast {
+      position: fixed; bottom: 1.75rem; right: 1.75rem; z-index: 999;
+      display: flex; align-items: center; gap: 0.75rem;
+      background: #0f2722; border: 1px solid #16a34a66;
+      border-radius: 1rem; padding: 0.85rem 1.2rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transform: translateY(6rem); opacity: 0;
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s;
+      pointer-events: none; max-width: 22rem;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
   </style>
 </head>
 <body>
 
-  <!-- Environment banner -->
+  <!-- Toast -->
+  <div id="toast">
+    <div class="w-9 h-9 rounded-full bg-green-500/20 flex items-center justify-center shrink-0">
+      <i data-lucide="check" class="w-5 h-5 text-green-400"></i>
+    </div>
+    <div>
+      <p class="text-sm font-semibold text-green-300">Key Deleted</p>
+      <p id="toastKey" class="text-xs text-slate-400 truncate max-w-[15rem]"></p>
+    </div>
+  </div>
+
+  <!-- Env banner -->
   <div id="envBanner" class="w-full py-2 px-6 flex items-center justify-center gap-3 text-xs font-semibold tracking-widest uppercase banner-DEV">
     <span id="bannerDot" class="h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
     <span id="bannerLabel" class="text-blue-300">Connected to DEV &mdash; pcp-dev.e-connectsolutions.com</span>
   </div>
 
-  <div class="p-6 md:p-10 max-w-7xl mx-auto">
+  <div class="p-5 md:p-9 max-w-7xl mx-auto">
 
     <!-- Header -->
-    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
+    <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-7 gap-5">
       <div>
         <h1 class="text-4xl font-bold tracking-tight">Cache <span class="gradient-text">Vault</span></h1>
-        <p class="text-slate-400 mt-2 flex items-center gap-2">
+        <p class="text-slate-400 mt-1.5 flex items-center gap-2">
           <span id="countBadge" class="bg-indigo-500/20 text-indigo-400 px-3 py-0.5 rounded-full text-sm font-semibold">0 Keys</span>
-          Across <span id="activeCount" class="text-slate-200">0</span> Sources
+          Across <span id="activeCount" class="text-slate-200 mx-0.5">0</span> Sources
         </p>
       </div>
 
-      <!-- Controls row -->
       <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
 
-        <!-- Environment switcher -->
+        <!-- Env switcher -->
         <div class="flex items-center gap-1.5 bg-slate-800/60 border border-slate-700 rounded-2xl p-1.5">
           <button class="env-btn env-DEV  active" onclick="switchEnv('DEV')">DEV</button>
           <button class="env-btn env-TEST"         onclick="switchEnv('TEST')">TEST</button>
@@ -65,95 +128,130 @@
         </div>
 
         <!-- Source filter -->
-        <select id="serviceFilter" onchange="filterData()" class="bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-4 outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
+        <select id="serviceFilter" onchange="filterData()" class="bg-slate-800 border border-slate-700 rounded-xl py-2 px-4 outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
           <option value="all">All Sources</option>
         </select>
 
         <!-- Search -->
-        <div class="relative flex-grow md:w-56">
+        <div class="relative flex-grow md:w-52">
           <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
           <input type="text" id="search" placeholder="Search keys..."
-                 class="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
+                 class="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all text-sm">
+        </div>
+
+        <!-- View toggle -->
+        <div class="flex items-center gap-1 bg-slate-800/60 border border-slate-700 rounded-xl p-1">
+          <button id="btn-grid"    class="view-btn active"   onclick="setView('grid')"    title="Grid view">
+            <i data-lucide="layout-grid" class="w-4 h-4"></i>
+          </button>
+          <button id="btn-list"    class="view-btn"          onclick="setView('list')"    title="List view">
+            <i data-lucide="list" class="w-4 h-4"></i>
+          </button>
+          <button id="btn-compact" class="view-btn"          onclick="setView('compact')" title="Compact view">
+            <i data-lucide="align-justify" class="w-4 h-4"></i>
+          </button>
         </div>
 
         <!-- Sync -->
-        <button onclick="loadAllKeys()" class="p-2.5 bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-all active:scale-95 shadow-lg flex items-center gap-2">
-          <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-          <span class="hidden md:inline">Sync</span>
+        <button onclick="loadAllKeys()" class="p-2 bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-all active:scale-95 shadow-lg flex items-center gap-2 text-sm px-4">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          <span>Sync</span>
         </button>
       </div>
     </div>
 
-    <div id="cardContainer" class="cache-grid"></div>
+    <div id="cardContainer" class="view-grid"></div>
   </div>
 
 <script>
   const ENVS = {
-    DEV:  { label: 'DEV',  host: 'https://pcp-dev.e-connectsolutions.com',  dot: 'bg-blue-400',   text: 'text-blue-300',   bannerClass: 'banner-DEV'  },
-    TEST: { label: 'TEST', host: 'https://pcp-test.e-connectsolutions.com', dot: 'bg-amber-400',  text: 'text-amber-300',  bannerClass: 'banner-TEST' },
-    UAT:  { label: 'UAT',  host: 'https://pcpuat.e-connectsolutions.com',   dot: 'bg-violet-400', text: 'text-violet-300', bannerClass: 'banner-UAT'  },
-    PROD: { label: 'PROD', host: 'https://digipb.punjab.gov.in',            dot: 'bg-red-400',    text: 'text-red-300',    bannerClass: 'banner-PROD' },
+    DEV:  { label:'DEV',  host:'https://pcp-dev.e-connectsolutions.com',  dot:'bg-blue-400',   text:'text-blue-300',   bannerClass:'banner-DEV'  },
+    TEST: { label:'TEST', host:'https://pcp-test.e-connectsolutions.com', dot:'bg-amber-400',  text:'text-amber-300',  bannerClass:'banner-TEST' },
+    UAT:  { label:'UAT',  host:'https://pcpuat.e-connectsolutions.com',   dot:'bg-violet-400', text:'text-violet-300', bannerClass:'banner-UAT'  },
+    PROD: { label:'PROD', host:'https://digipb.punjab.gov.in',            dot:'bg-red-400',    text:'text-red-300',    bannerClass:'banner-PROD' },
   };
 
-  let currentEnv = 'DEV';
+  let currentEnv  = 'DEV';
+  let currentView = localStorage.getItem('cacheVaultView') || 'grid';
+  let allKeysData = [];
+  let toastTimer  = null;
 
-  function getBaseUrl() {
-    return `${ENVS[currentEnv].host}/api/publicservice/Config`;
-  }
+  const COLORS = ['from-blue-500 to-cyan-400','from-indigo-500 to-purple-400','from-pink-500 to-rose-400','from-emerald-400 to-teal-500'];
+
+  /* ── helpers ── */
+  function getBaseUrl() { return `${ENVS[currentEnv].host}/api/publicservice/Config`; }
 
   function buildRequestBody(apiParams) {
-    return {
-      ApiKey: "", OrgId: 0, ApiParams: apiParams,
-      ResponseId: 0, Path: "", Module: "",
-      UserId: 0, UserDetails: "", UserSessionModel: "",
-      Language: "", FormAction: 0
-    };
+    return { ApiKey:"", OrgId:0, ApiParams:apiParams, ResponseId:0, Path:"", Module:"", UserId:0, UserDetails:"", UserSessionModel:"", Language:"", FormAction:0 };
   }
 
+  function esc(str) { return str.replace(/'/g,"\\'"); }
+
+  /* ── toast ── */
+  function showToast(keyName) {
+    const t = document.getElementById('toast');
+    document.getElementById('toastKey').textContent = keyName;
+    t.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  /* ── env switcher ── */
   function switchEnv(key) {
     if (key === currentEnv) return;
     currentEnv = key;
     const env = ENVS[key];
-
-    // Update pill buttons
-    document.querySelectorAll('.env-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.env-btn').forEach(b => b.classList.remove('active'));
     document.querySelector(`.env-${key}`).classList.add('active');
-
-    // Update banner
     const banner = document.getElementById('envBanner');
     banner.className = `w-full py-2 px-6 flex items-center justify-center gap-3 text-xs font-semibold tracking-widest uppercase ${env.bannerClass}`;
     document.getElementById('bannerDot').className = `h-2 w-2 rounded-full ${env.dot} animate-pulse`;
-    document.getElementById('bannerLabel').className = env.text;
-    document.getElementById('bannerLabel').textContent = `Connected to ${env.label} — ${env.host.replace('https://','')}`;
-
+    const lbl = document.getElementById('bannerLabel');
+    lbl.className = env.text;
+    lbl.textContent = `Connected to ${env.label} — ${env.host.replace('https://','')}`;
     loadAllKeys();
   }
 
-  let allKeysData = [];
+  /* ── view switcher ── */
+  function setView(v) {
+    currentView = v;
+    localStorage.setItem('cacheVaultView', v);
+    document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`btn-${v}`).classList.add('active');
+    const c = document.getElementById('cardContainer');
+    c.className = `view-${v}`;
+    renderCards(getFilteredData());
+  }
 
+  function getFilteredData() {
+    const s = document.getElementById("search").value.toLowerCase();
+    const src = document.getElementById("serviceFilter").value;
+    return allKeysData.filter(i => i.key.toLowerCase().includes(s) && (src==="all" || i.service===src));
+  }
+
+  /* ── fetch ── */
   async function loadAllKeys() {
     const container = document.getElementById("cardContainer");
-    const syncBtn = document.querySelector('button[onclick="loadAllKeys()"] i');
+    const syncIcon  = document.querySelector('button[onclick="loadAllKeys()"] i');
+    syncIcon.classList.add('animate-spin');
 
-    syncBtn.classList.add('animate-spin');
+    container.className = `view-${currentView}`;
     container.innerHTML = `
       <div class="col-span-full py-20 text-center">
-        <div class="inline-block animate-bounce mb-4 text-indigo-500">
-          <i data-lucide="wifi" class="w-10 h-10"></i>
-        </div>
+        <div class="inline-block animate-bounce mb-4 text-indigo-500"><i data-lucide="wifi" class="w-10 h-10"></i></div>
         <p class="text-slate-400 font-medium">Fetching from <span class="text-white font-bold">${currentEnv}</span>...</p>
       </div>`;
     lucide.createIcons();
 
     try {
-      const res = await fetch(`${getBaseUrl()}/GetAllCacheKeys`, {
+      const res  = await fetch(`${getBaseUrl()}/GetAllCacheKeys`, {
         method: 'POST',
-        headers: { 'accept': '*/*', 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRequestBody({ KeyName: "", Source: "" }))
+        headers: { 'accept':'*/*', 'Content-Type':'application/json' },
+        body: JSON.stringify(buildRequestBody({ KeyName:"", Source:"" }))
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      allKeysData = (data.CustomObject || []).map(k => ({ key: k.KeyName, service: k.Source, id: k.Id }));
+      allKeysData = (data.CustomObject || []).map(k => ({ key:k.KeyName, service:k.Source, id:k.Id }));
     } catch (err) {
       allKeysData = [];
       container.innerHTML = `
@@ -163,7 +261,7 @@
           <p class="text-sm text-slate-400 mt-1">${err.message}</p>
         </div>`;
       lucide.createIcons();
-      syncBtn.classList.remove('animate-spin');
+      syncIcon.classList.remove('animate-spin');
       return;
     }
 
@@ -171,99 +269,125 @@
     document.getElementById("search").value = "";
     document.getElementById("serviceFilter").value = "all";
     renderCards(allKeysData);
-    syncBtn.classList.remove('animate-spin');
+    syncIcon.classList.remove('animate-spin');
   }
 
   function updateServiceDropdown() {
     const select = document.getElementById('serviceFilter');
-    const currentSelection = select.value;
-    const activeNames = [...new Set(allKeysData.map(item => item.service))].sort();
-
-    let html = `<option value="all">All Sources (${allKeysData.length} keys)</option>`;
-    activeNames.forEach(name => {
-      const count = allKeysData.filter(i => i.service === name).length;
-      html += `<option value="${name}">${name} (${count})</option>`;
-    });
-
+    const prev = select.value;
+    const names = [...new Set(allKeysData.map(i => i.service))].sort();
+    let html = `<option value="all">All Sources (${allKeysData.length})</option>`;
+    names.forEach(n => { html += `<option value="${n}">${n} (${allKeysData.filter(i=>i.service===n).length})</option>`; });
     select.innerHTML = html;
-    if (activeNames.includes(currentSelection)) select.value = currentSelection;
+    if (names.includes(prev)) select.value = prev;
   }
 
+  /* ── render ── */
   function renderCards(data) {
     const container = document.getElementById("cardContainer");
-    document.getElementById("countBadge").innerText = `${data.length} Keys`;
-    document.getElementById("activeCount").innerText = [...new Set(data.map(i => i.service))].length;
+    document.getElementById("countBadge").textContent = `${data.length} Keys`;
+    document.getElementById("activeCount").textContent = [...new Set(data.map(i=>i.service))].length;
 
     if (data.length === 0) {
       container.innerHTML = `
         <div class="col-span-full py-20 text-center opacity-50 border-2 border-dashed border-slate-800 rounded-3xl">
           <i data-lucide="database-zap" class="w-16 h-16 mx-auto mb-4 text-slate-600"></i>
-          <p class="text-xl font-medium">Vault is currently empty</p>
-          <p class="text-sm">No cache keys found on ${currentEnv}.</p>
+          <p class="text-xl font-medium">Vault is empty</p>
+          <p class="text-sm">No keys found on ${currentEnv}.</p>
         </div>`;
       lucide.createIcons();
       return;
     }
 
-    const colors = ['from-blue-500 to-cyan-400','from-indigo-500 to-purple-400','from-pink-500 to-rose-400','from-emerald-400 to-teal-500'];
-
-    container.innerHTML = data.map((item, index) => `
-      <div class="glass-card rounded-3xl p-6 flex flex-col justify-between group">
-        <div>
-          <div class="flex items-start justify-between mb-4">
-            <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${colors[index % colors.length]} flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-              <i data-lucide="zap" class="w-6 h-6 text-white"></i>
-            </div>
-            <button onclick="deleteKey('${item.key.replace(/'/g,"\\'")}', '${item.service.replace(/'/g,"\\'")}')"
-                    class="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-all group-hover:translate-x-0 translate-x-2 opacity-0 group-hover:opacity-100">
-              <i data-lucide="trash-2" class="w-5 h-5"></i>
-            </button>
-          </div>
-          <h3 class="font-bold text-lg text-slate-100 break-all mb-1 leading-tight">${item.key}</h3>
-          <p class="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em]">${item.service}</p>
-        </div>
-        <div class="mt-6 flex items-center justify-between border-t border-slate-700/40 pt-4">
-          <div class="flex flex-col">
-            <span class="text-[10px] text-slate-500 font-bold uppercase">Source</span>
-            <span class="text-xs text-slate-300 font-mono">${item.service}</span>
-          </div>
-          <div class="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
-            <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
-          </div>
-        </div>
-      </div>
-    `).join("");
+    if (currentView === 'grid')    container.innerHTML = data.map(gridCard).join('');
+    if (currentView === 'list')    container.innerHTML = data.map(listCard).join('');
+    if (currentView === 'compact') container.innerHTML = data.map(compactRow).join('');
 
     lucide.createIcons();
   }
 
+  function gridCard(item, index) {
+    const c = COLORS[index % COLORS.length];
+    return `
+    <div class="card-grid group">
+      <div class="flex items-start justify-between">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br ${c} flex items-center justify-center shadow-md shrink-0">
+          <i data-lucide="key" class="w-4 h-4 text-white"></i>
+        </div>
+        <button onclick="deleteKey('${esc(item.key)}','${esc(item.service)}')"
+                class="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+        </button>
+      </div>
+      <div>
+        <p class="font-semibold text-sm text-slate-100 break-all leading-snug">${item.key}</p>
+        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest mt-0.5">${item.service}</p>
+      </div>
+      <div class="flex items-center justify-between pt-2 border-t border-slate-700/40">
+        <span class="text-[10px] text-slate-500 font-mono">${currentEnv}</span>
+        <div class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse"></div>
+      </div>
+    </div>`;
+  }
+
+  function listCard(item, index) {
+    const c = COLORS[index % COLORS.length];
+    return `
+    <div class="card-list group">
+      <div class="w-8 h-8 rounded-xl bg-gradient-to-br ${c} flex items-center justify-center shrink-0">
+        <i data-lucide="key" class="w-3.5 h-3.5 text-white"></i>
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="font-semibold text-sm text-slate-100 truncate">${item.key}</p>
+        <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider">${item.service}</p>
+      </div>
+      <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-700/60 text-slate-400 shrink-0 hidden sm:block">${currentEnv}</span>
+      <div class="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shrink-0"></div>
+      <button onclick="deleteKey('${esc(item.key)}','${esc(item.service)}')"
+              class="p-1.5 hover:bg-red-500/20 text-red-400 rounded-lg transition-all opacity-0 group-hover:opacity-100 shrink-0">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>
+    </div>`;
+  }
+
+  function compactRow(item, index) {
+    const dotColors = ['bg-blue-500','bg-indigo-500','bg-pink-500','bg-emerald-500'];
+    const dot = dotColors[index % dotColors.length];
+    return `
+    <div class="card-compact group">
+      <div class="h-2 w-2 rounded-full ${dot} shrink-0"></div>
+      <span class="text-xs font-mono text-slate-100 flex-1 truncate">${item.key}</span>
+      <span class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider shrink-0 hidden sm:block w-40 truncate text-right">${item.service}</span>
+      <span class="text-[10px] text-slate-600 shrink-0 hidden md:block w-10 text-right">${currentEnv}</span>
+      <button onclick="deleteKey('${esc(item.key)}','${esc(item.service)}')"
+              class="p-1 hover:bg-red-500/20 text-red-500 rounded transition-all opacity-0 group-hover:opacity-100 shrink-0">
+        <i data-lucide="x" class="w-3 h-3"></i>
+      </button>
+    </div>`;
+  }
+
+  /* ── delete ── */
   async function deleteKey(keyName, source) {
     if (!confirm(`Purge [${keyName}] from ${source} on ${currentEnv}?`)) return;
     try {
       await fetch(`${getBaseUrl()}/GetDeleteCacheKey`, {
         method: 'POST',
-        headers: { 'accept': '*/*', 'Content-Type': 'application/json' },
-        body: JSON.stringify(buildRequestBody({ KeyName: keyName, Source: source }))
+        headers: { 'accept':'*/*', 'Content-Type':'application/json' },
+        body: JSON.stringify(buildRequestBody({ KeyName:keyName, Source:source }))
       });
-    } catch (_) {
-      // CORS may block the response but server still processes the delete
-    }
+    } catch (_) { /* CORS blocks response but server processes delete */ }
+    showToast(keyName);
     await loadAllKeys();
   }
 
-  function filterData() {
-    const searchTerm = document.getElementById("search").value.toLowerCase();
-    const serviceTerm = document.getElementById("serviceFilter").value;
-    const filtered = allKeysData.filter(item =>
-      item.key.toLowerCase().includes(searchTerm) &&
-      (serviceTerm === "all" || item.service === serviceTerm)
-    );
-    renderCards(filtered);
-  }
+  /* ── filter ── */
+  function filterData() { renderCards(getFilteredData()); }
 
   document.getElementById("search").addEventListener("input", filterData);
   document.getElementById("serviceFilter").addEventListener("change", filterData);
 
+  /* ── init ── */
+  setView(currentView);
   loadAllKeys();
 </script>
 </body>
