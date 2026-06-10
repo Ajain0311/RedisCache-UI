@@ -1,14 +1,14 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Float, MeshDistortMaterial, Stars } from '@react-three/drei'
 import { EffectComposer, Bloom, Vignette } from '@react-three/postprocessing'
-import { useRef, useMemo, Suspense } from 'react'
+import { useRef, useMemo, useEffect, Suspense } from 'react'
 import * as THREE from 'three'
 
 const RED      = '#DC382C'
 const RED_GLOW = '#ff6b6b'
-const RED_HOT  = '#ffbbbb'
+const RED_HOT  = '#ffcccc'
 
-/* ── Central crystal — big, morphing, 3 spinning rings ── */
+/* ── Central morphing crystal ── */
 function RedisCrystal() {
   const r1    = useRef()
   const r2    = useRef()
@@ -20,27 +20,18 @@ function RedisCrystal() {
     if (r1.current)    r1.current.rotation.z  =  t * 0.42
     if (r2.current)    r2.current.rotation.x  = -t * 0.26
     if (r3.current) {  r3.current.rotation.y   =  t * 0.18; r3.current.rotation.z = t * 0.11 }
-    if (pulse.current) pulse.current.scale.setScalar(1 + Math.sin(t * 2.4) * 0.038)
+    if (pulse.current) pulse.current.scale.setScalar(1 + Math.sin(t * 2.4) * 0.042)
   })
 
   return (
     <Float speed={0.6} rotationIntensity={0.06} floatIntensity={0.28}>
       <group>
-        {/* Core */}
         <mesh ref={pulse}>
           <icosahedronGeometry args={[2.1, 5]} />
-          <MeshDistortMaterial
-            color={RED}
-            distort={0.40}
-            speed={1.5}
-            roughness={0.02}
-            metalness={0.98}
-            emissive={RED}
-            emissiveIntensity={1.4}
-          />
+          <MeshDistortMaterial color={RED} distort={0.40} speed={1.5} roughness={0.02} metalness={0.98} emissive={RED} emissiveIntensity={1.4} />
         </mesh>
 
-        {/* Holographic inner sphere */}
+        {/* Holographic inner orb */}
         <mesh>
           <sphereGeometry args={[1.5, 32, 32]} />
           <meshBasicMaterial color={RED_HOT} transparent opacity={0.05} />
@@ -49,22 +40,17 @@ function RedisCrystal() {
         {/* Wireframe cage */}
         <mesh>
           <icosahedronGeometry args={[2.18, 2]} />
-          <meshBasicMaterial color={RED} transparent opacity={0.06} wireframe />
+          <meshBasicMaterial color={RED} transparent opacity={0.055} wireframe />
         </mesh>
 
-        {/* Ring 1 — equatorial, fast */}
         <mesh ref={r1} rotation={[Math.PI / 2, 0, 0]}>
-          <torusGeometry args={[3.1, 0.026, 16, 128]} />
+          <torusGeometry args={[3.1, 0.025, 16, 128]} />
           <meshBasicMaterial color={RED} transparent opacity={0.88} />
         </mesh>
-
-        {/* Ring 2 — diagonal, medium */}
         <mesh ref={r2} rotation={[Math.PI / 4, 0, 0]}>
           <torusGeometry args={[3.9, 0.017, 16, 128]} />
           <meshBasicMaterial color={RED} transparent opacity={0.56} />
         </mesh>
-
-        {/* Ring 3 — random tilt, slow */}
         <mesh ref={r3} rotation={[0, Math.PI / 5, Math.PI / 3.2]}>
           <torusGeometry args={[4.75, 0.011, 16, 128]} />
           <meshBasicMaterial color={RED_GLOW} transparent opacity={0.38} />
@@ -78,18 +64,18 @@ function RedisCrystal() {
   )
 }
 
-/* ── 8 mini crystals orbiting at varied radii/speeds ── */
+/* ── 12 mini crystals in orbital rings ── */
 function OrbitalShards() {
   const refs = useRef([])
 
   const shards = useMemo(() =>
-    Array.from({ length: 8 }, (_, i) => ({
-      angle:     (i / 8) * Math.PI * 2,
-      radius:    5.2 + (i % 3) * 1.5,
-      yOffset:   (i % 2 ? 1 : -1) * (0.7 + (i % 3) * 0.5),
-      scale:     0.11 + (i % 4) * 0.065,
-      speed:     0.15 + (i % 5) * 0.042,
-      tiltSpeed: 0.72 + (i % 3) * 0.58,
+    Array.from({ length: 12 }, (_, i) => ({
+      angle:     (i / 12) * Math.PI * 2,
+      radius:    5.0 + (i % 4) * 1.2,
+      yOffset:   (i % 2 ? 1 : -1) * (0.6 + (i % 4) * 0.4),
+      scale:     0.09 + (i % 4) * 0.055,
+      speed:     0.14 + (i % 5) * 0.038,
+      tiltSpeed: 0.7  + (i % 3) * 0.6,
     }))
   , [])
 
@@ -99,13 +85,9 @@ function OrbitalShards() {
       const el = refs.current[i]
       if (!el) return
       const a = s.angle + t * s.speed
-      el.position.set(
-        Math.cos(a) * s.radius,
-        s.yOffset + Math.sin(t * 0.52 + s.angle) * 0.48,
-        Math.sin(a) * s.radius
-      )
+      el.position.set(Math.cos(a) * s.radius, s.yOffset + Math.sin(t * 0.5 + s.angle) * 0.5, Math.sin(a) * s.radius)
       el.rotation.x = t * s.tiltSpeed
-      el.rotation.z = t * s.tiltSpeed * 0.62
+      el.rotation.z = t * s.tiltSpeed * 0.6
     })
   })
 
@@ -114,25 +96,102 @@ function OrbitalShards() {
       {shards.map((s, i) => (
         <mesh key={i} ref={el => (refs.current[i] = el)} scale={s.scale}>
           <icosahedronGeometry args={[1, 1]} />
-          <MeshDistortMaterial
-            color={RED}
-            distort={0.32}
-            speed={2.8}
-            emissive={RED}
-            emissiveIntensity={0.95}
-            metalness={0.95}
-            roughness={0.05}
-          />
+          <MeshDistortMaterial color={RED} distort={0.32} speed={2.8} emissive={RED} emissiveIntensity={0.95} metalness={0.95} roughness={0.05} />
         </mesh>
       ))}
     </>
   )
 }
 
-/* ── 3 sonar pulses expanding outward ── */
+/* ── Hexagonal floor grid — instancedMesh for performance ── */
+function HexGrid() {
+  const ref  = useRef()
+  const COLS = 11
+  const ROWS = 8
+  const COUNT = COLS * ROWS
+
+  const hexCenters = useMemo(() => {
+    const data = []
+    for (let row = 0; row < ROWS; row++) {
+      for (let col = 0; col < COLS; col++) {
+        const x = (col - COLS / 2 + 0.5) * 1.55 + (row % 2 ? 0.775 : 0)
+        const z = (row - ROWS / 2 + 0.5) * 1.35
+        data.push({ x: x * 2.4, z: z * 2.4, col, row })
+      }
+    }
+    return data
+  }, [])
+
+  useEffect(() => {
+    if (!ref.current) return
+    const dummy = new THREE.Object3D()
+    hexCenters.forEach(({ x, z }, i) => {
+      dummy.position.set(x, -8, z)
+      dummy.rotation.set(Math.PI / 2, 0, 0)
+      dummy.scale.setScalar(1)
+      dummy.updateMatrix()
+      ref.current.setMatrixAt(i, dummy.matrix)
+    })
+    ref.current.instanceMatrix.needsUpdate = true
+  }, [hexCenters])
+
+  useFrame(({ clock }) => {
+    if (!ref.current) return
+    const t   = clock.elapsedTime
+    const dummy = new THREE.Object3D()
+    hexCenters.forEach(({ x, z, col, row }, i) => {
+      const wave  = Math.sin(t * 0.75 + col * 0.42 + row * 0.55) * 0.22
+      const scale = 0.82 + wave
+      dummy.position.set(x, -8 + wave * 0.4, z)
+      dummy.rotation.set(Math.PI / 2, 0, t * 0.02)
+      dummy.scale.setScalar(scale)
+      dummy.updateMatrix()
+      ref.current.setMatrixAt(i, dummy.matrix)
+    })
+    ref.current.instanceMatrix.needsUpdate = true
+    ref.current.rotation.y = t * 0.018
+  })
+
+  return (
+    <instancedMesh ref={ref} args={[null, null, COUNT]}>
+      <torusGeometry args={[0.44, 0.018, 6, 6]} />
+      <meshBasicMaterial color={RED} transparent opacity={0.1} />
+    </instancedMesh>
+  )
+}
+
+/* ── Concentric energy rings pulsing outward ── */
+function EnergyField() {
+  const refs = useRef([])
+  const RADII = [2.8, 3.5, 4.2, 4.9, 5.7]
+
+  useFrame(({ clock }) => {
+    const t = clock.elapsedTime
+    RADII.forEach((_, i) => {
+      const el = refs.current[i]
+      if (!el) return
+      const phase = ((t * 0.62 + i * 0.2) % 1)
+      el.scale.setScalar(1 + phase * 0.3)
+      el.material.opacity = (1 - phase) * 0.38
+      el.rotation.z = t * (0.2 + i * 0.04) * (i % 2 ? 1 : -1)
+    })
+  })
+
+  return (
+    <>
+      {RADII.map((r, i) => (
+        <mesh key={i} ref={el => (refs.current[i] = el)}>
+          <torusGeometry args={[r, 0.012, 16, 80]} />
+          <meshBasicMaterial color={RED_GLOW} transparent />
+        </mesh>
+      ))}
+    </>
+  )
+}
+
+/* ── 3 sonar sphere pulses ── */
 function SonarPulse() {
   const refs = useRef([])
-
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
     for (let i = 0; i < 3; i++) {
@@ -140,10 +199,9 @@ function SonarPulse() {
       if (!el) return
       const phase = ((t * 0.36 + i / 3) % 1)
       el.scale.setScalar(2.2 + phase * 10)
-      el.material.opacity = Math.max(0, (1 - phase) * 0.17)
+      el.material.opacity = Math.max(0, (1 - phase) * 0.16)
     }
   })
-
   return (
     <>
       {[0, 1, 2].map(i => (
@@ -156,10 +214,9 @@ function SonarPulse() {
   )
 }
 
-/* ── 600 galaxy particles with warm-red coloring ── */
+/* ── 600 warm-red galaxy particles ── */
 function Particles({ count = 600 }) {
   const ref = useRef()
-
   const { positions, colors } = useMemo(() => {
     const pos = new Float32Array(count * 3)
     const col = new Float32Array(count * 3)
@@ -196,11 +253,10 @@ function Particles({ count = 600 }) {
   )
 }
 
-/* ── 22 data stream orbs shooting outward from core ── */
+/* ── 22 data stream orbs shooting outward ── */
 function DataStream({ startPos, endPos, speed }) {
   const ref   = useRef()
   const phase = useRef(Math.random())
-
   useFrame(({ clock }) => {
     if (!ref.current) return
     const t    = ((clock.elapsedTime * speed + phase.current) % 1)
@@ -209,7 +265,6 @@ function DataStream({ startPos, endPos, speed }) {
     ref.current.material.opacity = fade
     ref.current.scale.setScalar(0.5 + fade * 0.9)
   })
-
   return (
     <mesh ref={ref}>
       <sphereGeometry args={[0.058, 8, 8]} />
@@ -235,11 +290,10 @@ function DataStreams() {
       }
     })
   , [])
-
   return <>{streams.map((s, i) => <DataStream key={i} {...s} />)}</>
 }
 
-/* ── Cinematic camera: zoom + gentle sway ── */
+/* ── Cinematic camera: zoom in + gentle lateral sway ── */
 function CameraRig() {
   useFrame(({ camera, clock }) => {
     const t     = clock.elapsedTime
@@ -253,7 +307,6 @@ function CameraRig() {
   return null
 }
 
-/* ── Post-processing ── */
 function PostFX() {
   return (
     <EffectComposer>
@@ -275,6 +328,8 @@ export default function SplashScene() {
       <CameraRig />
       <RedisCrystal />
       <OrbitalShards />
+      <HexGrid />
+      <EnergyField />
       <SonarPulse />
       <Particles count={600} />
       <DataStreams />
