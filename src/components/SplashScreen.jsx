@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const SplashScene = lazy(() => import('./SplashScene'))
 
-const DURATION = 4000 // ms — total splash duration
+const DURATION = 6000 // ms — total splash duration
 
 export default function SplashScreen({ onComplete }) {
   const [progress,   setProgress]   = useState(0)

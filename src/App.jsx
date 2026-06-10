@@ -1,6 +1,8 @@
 import { useState, useCallback, lazy, Suspense } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import Dashboard from './Dashboard'
+import CursorFX   from './components/CursorFX'
+import ClickRipple from './components/ClickRipple'
 
 // Lazy-load heavy screens so they don't block initial paint
 const SplashScreen = lazy(() => import('./components/SplashScreen'))
@@ -21,6 +23,8 @@ export default function App() {
 
   return (
     <>
+      <CursorFX />
+      <ClickRipple />
       {/* Splash + auth share AnimatePresence so exit/enter are sequenced */}
       <AnimatePresence mode="wait">
         {phase === 'splash' && (
