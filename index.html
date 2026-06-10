@@ -7,7 +7,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  
+
   <style>
     body { font-family: 'Outfit', sans-serif; background: #0f172a; color: white; min-height: 100vh; }
     .cache-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
@@ -25,21 +25,21 @@
         <h1 class="text-4xl font-bold tracking-tight">Cache <span class="gradient-text">Vault</span></h1>
         <p class="text-slate-400 mt-2 flex items-center gap-2">
             <span id="countBadge" class="bg-indigo-500/20 text-indigo-400 px-3 py-0.5 rounded-full text-sm font-semibold">0 Keys</span>
-            Scanning <span id="activeCount" class="text-slate-200">0</span>/13 Microservices
+            Across <span id="activeCount" class="text-slate-200">0</span> Sources
         </p>
       </div>
 
       <div class="flex flex-wrap items-center gap-4 w-full lg:w-auto">
         <select id="serviceFilter" onchange="filterData()" class="bg-slate-800 border border-slate-700 rounded-xl py-2.5 px-4 outline-none focus:ring-2 focus:ring-indigo-500 text-sm">
-            <option value="all">All Services</option>
+            <option value="all">All Sources</option>
         </select>
-        
+
         <div class="relative flex-grow md:w-64">
             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-            <input type="text" id="search" placeholder="Search keys..." 
+            <input type="text" id="search" placeholder="Search keys..."
                    class="w-full bg-slate-800/50 border border-slate-700 rounded-xl py-2.5 pl-10 pr-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all">
         </div>
-        
+
         <button onclick="loadAllKeys()" class="p-2.5 bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-all active:scale-95 shadow-lg flex items-center gap-2">
           <i data-lucide="refresh-cw" class="w-5 h-5"></i>
           <span class="hidden md:inline">Sync All</span>
@@ -48,61 +48,63 @@
     </div>
 
     <div id="cardContainer" class="cache-grid">
-        </div>
+    </div>
   </div>
+
 <script>
-  const SERVICES = [
-    { name: "ApiGateway", port: 7218 },
-    { name: "ApplicationIntake", port: 53115 },
-    { name: "Authentication", port: 7141 },
-    { name: "Authorization", port: 62908 },
-    { name: "DMS", port: 7275 },
-    { name: "DSC", port: 61420 },
-    { name: "PublicService", port: 61422 },
-    { name: "NTF", port: 7225 },
-    { name: "PAYMENT", port: 7061 },
-    { name: "ThirdParty", port: 50504 },
-    { name: "TOKEN", port: 7110 },
-    { name: "UM", port: 7177 },
-    { name: "WorkFlow", port: 53114 }
-  ];
+  const BASE_URL = 'https://pcp-dev.e-connectsolutions.com/api/publicservice/Config';
+
+  function buildRequestBody(apiParams) {
+    return {
+      ApiKey: "", OrgId: 0, ApiParams: apiParams,
+      ResponseId: 0, Path: "", Module: "",
+      UserId: 0, UserDetails: "", UserSessionModel: "",
+      Language: "", FormAction: 0
+    };
+  }
 
   let allKeysData = [];
 
   async function loadAllKeys() {
     const container = document.getElementById("cardContainer");
     const syncBtn = document.querySelector('button[onclick="loadAllKeys()"] i');
-    
-    // UI Feedback: Spin the refresh icon
+
     syncBtn.classList.add('animate-spin');
     container.innerHTML = `
       <div class="col-span-full py-20 text-center">
         <div class="inline-block animate-bounce mb-4 text-indigo-500">
           <i data-lucide="wifi" class="w-10 h-10"></i>
         </div>
-        <p class="text-slate-400 font-medium">Synchronizing across 13 endpoints...</p>
+        <p class="text-slate-400 font-medium">Fetching cache keys from server...</p>
       </div>`;
     lucide.createIcons();
 
-    const fetchPromises = SERVICES.map(async (svc) => {
-      try {
-        const res = await fetch(`http://localhost:${svc.port}/api/cache/keys`, { signal: AbortSignal.timeout(3000) });
-        if (!res.ok) throw new Error();
-        const keys = await res.json();
-        return keys.map(k => ({ key: k, service: svc.name, port: svc.port }));
-      } catch (err) {
-        return []; 
-      }
-    });
+    try {
+      const res = await fetch(`${BASE_URL}/GetAllCacheKeys`, {
+        method: 'POST',
+        headers: { 'accept': '*/*', 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildRequestBody({ KeyName: "", Source: "" }))
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      allKeysData = (data.CustomObject || []).map(k => ({ key: k.KeyName, service: k.Source, id: k.Id }));
+    } catch (err) {
+      allKeysData = [];
+      container.innerHTML = `
+        <div class="col-span-full py-20 text-center opacity-60 border-2 border-dashed border-red-800 rounded-3xl">
+          <i data-lucide="wifi-off" class="w-16 h-16 mx-auto mb-4 text-red-500"></i>
+          <p class="text-xl font-medium text-red-400">Failed to fetch cache keys</p>
+          <p class="text-sm text-slate-400 mt-1">${err.message}</p>
+        </div>`;
+      lucide.createIcons();
+      syncBtn.classList.remove('animate-spin');
+      return;
+    }
 
-    const results = await Promise.allSettled(fetchPromises);
-    allKeysData = results.filter(r => r.status === 'fulfilled').flatMap(r => r.value);
-
-    // FIX: Reset filters and update the dropdown dynamically
     updateServiceDropdown();
     document.getElementById("search").value = "";
     document.getElementById("serviceFilter").value = "all";
-    
+
     renderCards(allKeysData);
     syncBtn.classList.remove('animate-spin');
   }
@@ -110,27 +112,25 @@
   function updateServiceDropdown() {
     const select = document.getElementById('serviceFilter');
     const currentSelection = select.value;
-    
-    // Get unique list of services that actually have keys right now
+
     const activeNames = [...new Set(allKeysData.map(item => item.service))].sort();
-    
-    let html = `<option value="all">All Services (${allKeysData.length} keys)</option>`;
+
+    let html = `<option value="all">All Sources (${allKeysData.length} keys)</option>`;
     activeNames.forEach(name => {
       const count = allKeysData.filter(i => i.service === name).length;
       html += `<option value="${name}">${name} (${count})</option>`;
     });
-    
+
     select.innerHTML = html;
-    // Try to keep selection if it still exists, otherwise default to "all"
     if (activeNames.includes(currentSelection)) {
-        select.value = currentSelection;
+      select.value = currentSelection;
     }
   }
 
   function renderCards(data) {
     const container = document.getElementById("cardContainer");
     document.getElementById("countBadge").innerText = `${data.length} Keys`;
-    
+
     const activeServices = [...new Set(data.map(item => item.service))].length;
     document.getElementById("activeCount").innerText = activeServices;
 
@@ -139,7 +139,7 @@
         <div class="col-span-full py-20 text-center opacity-50 border-2 border-dashed border-slate-800 rounded-3xl">
           <i data-lucide="database-zap" class="w-16 h-16 mx-auto mb-4 text-slate-600"></i>
           <p class="text-xl font-medium">Vault is currently empty</p>
-          <p class="text-sm">No cache keys found in any connected service.</p>
+          <p class="text-sm">No cache keys found.</p>
         </div>`;
       lucide.createIcons();
       return;
@@ -148,7 +148,7 @@
     container.innerHTML = data.map((item, index) => {
       const colors = ['from-blue-500 to-cyan-400', 'from-indigo-500 to-purple-400', 'from-pink-500 to-rose-400', 'from-emerald-400 to-teal-500'];
       const color = colors[index % colors.length];
-      
+
       return `
       <div class="glass-card rounded-3xl p-6 flex flex-col justify-between group">
         <div>
@@ -156,7 +156,7 @@
             <div class="w-12 h-12 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
               <i data-lucide="zap" class="w-6 h-6 text-white"></i>
             </div>
-            <button onclick="deleteKey('${item.service}', ${item.port}, '${item.key}')" 
+            <button onclick="deleteKey('${item.key}', '${item.service}')"
                     class="p-2 hover:bg-red-500/20 text-red-400 rounded-lg transition-all group-hover:translate-x-0 translate-x-2 opacity-0 group-hover:opacity-100">
               <i data-lucide="trash-2" class="w-5 h-5"></i>
             </button>
@@ -164,11 +164,11 @@
           <h3 class="font-bold text-lg text-slate-100 break-all mb-1 leading-tight">${item.key}</h3>
           <p class="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em]">${item.service}</p>
         </div>
-        
+
         <div class="mt-6 flex items-center justify-between border-t border-slate-700/40 pt-4">
            <div class="flex flex-col">
-              <span class="text-[10px] text-slate-500 font-bold uppercase">Endpoint</span>
-              <span class="text-xs text-slate-300 font-mono">localhost:${item.port}</span>
+              <span class="text-[10px] text-slate-500 font-bold uppercase">Source</span>
+              <span class="text-xs text-slate-300 font-mono">${item.service}</span>
            </div>
            <div class="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
               <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
@@ -176,15 +176,20 @@
         </div>
       </div>
     `}).join("");
-    
+
     lucide.createIcons();
   }
 
-  async function deleteKey(serviceName, port, key) {
-    if (!confirm(`Purge [${key}] from ${serviceName}?`)) return;
+  async function deleteKey(keyName, source) {
+    if (!confirm(`Purge [${keyName}] from ${source}?`)) return;
     try {
-      const res = await fetch(`http://localhost:${port}/api/cache/${key}`, { method: "DELETE" });
-      if(res.ok) await loadAllKeys(); 
+      const res = await fetch(`${BASE_URL}/GetDeleteCacheKey`, {
+        method: 'POST',
+        headers: { 'accept': '*/*', 'Content-Type': 'application/json' },
+        body: JSON.stringify(buildRequestBody({ KeyName: keyName, Source: source }))
+      });
+      if (res.ok) await loadAllKeys();
+      else alert(`Delete failed: HTTP ${res.status}`);
     } catch (err) {
       alert("Error: Could not reach service.");
     }
@@ -193,20 +198,19 @@
   function filterData() {
     const searchTerm = document.getElementById("search").value.toLowerCase();
     const serviceTerm = document.getElementById("serviceFilter").value;
-    
+
     const filtered = allKeysData.filter(item => {
       const matchesSearch = item.key.toLowerCase().includes(searchTerm);
       const matchesService = serviceTerm === "all" || item.service === serviceTerm;
       return matchesSearch && matchesService;
     });
-    
+
     renderCards(filtered);
   }
 
   document.getElementById("search").addEventListener("input", filterData);
   document.getElementById("serviceFilter").addEventListener("change", filterData);
 
-  // Initial Sync
   loadAllKeys();
 </script>
 </body>
