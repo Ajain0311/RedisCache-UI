@@ -183,16 +183,15 @@
   async function deleteKey(keyName, source) {
     if (!confirm(`Purge [${keyName}] from ${source}?`)) return;
     try {
-      const res = await fetch(`${BASE_URL}/GetDeleteCacheKey`, {
+      await fetch(`${BASE_URL}/GetDeleteCacheKey`, {
         method: 'POST',
         headers: { 'accept': '*/*', 'Content-Type': 'application/json' },
         body: JSON.stringify(buildRequestBody({ KeyName: keyName, Source: source }))
       });
-      if (res.ok) await loadAllKeys();
-      else alert(`Delete failed: HTTP ${res.status}`);
-    } catch (err) {
-      alert("Error: Could not reach service.");
+    } catch (_) {
+      // CORS may block the response but the server still processes the delete
     }
+    await loadAllKeys();
   }
 
   function filterData() {
